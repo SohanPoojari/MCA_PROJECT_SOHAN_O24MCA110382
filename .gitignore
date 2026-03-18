@@ -1,0 +1,67 @@
+# --- Python Specific ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+.venv/
+venv/
+ENV/
+
+# --- Environment & Secrets (CRITICAL) ---
+.env
+.venv
+env.bak
+*.env
+*.pem
+*.key
+secrets.yaml
+# Ignore any cloud provider specific credentials
+.aws/
+.gcloud/
+
+# --- Docker ---
+# Ignore local data persistence for databases
+# (e.g., if you use a volume for Postgres/Redis locally)
+**/postgres-data/
+**/redis-data/
+
+# --- Kubernetes & Helm ---
+.kube/
+/charts/*/charts/
+/charts/*/tmpcharts/
+
+# --- Infrastructure as Code (Terraform) ---
+.terraform/
+*.tfstate
+*.tfstate.backup
+.terraform.lock.hcl
+
+# --- IDEs & OS ---
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# --- Testing & Coverage ---
+.pytest_cache/
+.coverage
+htmlcov/
