@@ -10,11 +10,11 @@ The core objective is to minimize manual intervention by establishing a robust *
 ## 🛠️ Tech Stack & Tools
 * **Language:** Python (FastAPI)
 * **Containerization:** Docker & Docker Compose
-* **Orchestration:** Kubernetes (EKS / GKE)
+* **Orchestration:** Kubernetes (AKS)
 * **CI/CD Automation:** GitHub Actions
 * **Infrastructure as Code (IaC):** Terraform / Cloud CLI
 * **Observability:** Prometheus & Grafana
-* **Cloud Provider:** AWS / GCP
+* **Cloud Provider:** Azure
 
 ---
 
