@@ -3,28 +3,28 @@ name: MCA CI/CD Pipeline
 on:
   push:
     branches:
-      - main # This tells GitHub to run this pipeline every time code is pushed to main branch
+      - main
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     steps:
     
-    # 1. Get the latest code from your repository
+    # 1. Get the latest code
     - name: Checkout Code
       uses: actions/checkout@v3
 
-    # 2. Log into your Azure Account using the secret you saved
+    # 2. Log into Azure
     - name: Azure Login
       uses: azure/login@v1
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-    # 3. Log into your Azure Container Registry (ACR) Warehouse
+    # 3. Log into ACR
     - name: Login to ACR
       run: az acr login --name sohanmcastorage7530
 
-    # 4. Build new Docker images from your code and push them to the warehouse
+    # 4. Build and Push ALL Docker images (Including Frontend)
     - name: Build and Push Docker Images
       run: |
         docker build -t sohanmcastorage7530.azurecr.io/user-service:v1 ./services/user-service
@@ -36,20 +36,28 @@ jobs:
         docker build -t sohanmcastorage7530.azurecr.io/order-service:v1 ./services/order-service
         docker push sohanmcastorage7530.azurecr.io/order-service:v1
 
-    # 5. Connect to your Kubernetes Cluster
+        # --- ADDED FRONTEND BUILD ---
+        docker build -t sohanmcastorage7530.azurecr.io/frontend-service:v1 ./services/frontend-service
+        docker push sohanmcastorage7530.azurecr.io/frontend-service:v1
+
+    # 5. Connect to AKS
     - name: Set AKS Context
       uses: azure/aks-set-context@v3
       with:
         resource-group: mca-project-group
         cluster-name: mca-aks-cluster
 
-    # 6. Apply the instruction manuals (YAML files) and restart the containers to load the new code
+    # 6. Apply ALL YAMLs and restart
     - name: Deploy to Kubernetes
       run: |
         kubectl apply -f k8s/user-service.yaml
         kubectl apply -f k8s/product-service.yaml
         kubectl apply -f k8s/order-service.yaml
+        # --- ADDED FRONTEND DEPLOYMENT ---
+        kubectl apply -f k8s/frontend-deployment.yaml
         
         kubectl rollout restart deployment user-service-deployment
         kubectl rollout restart deployment product-service-deployment
         kubectl rollout restart deployment order-service-deployment
+        # --- ADDED FRONTEND RESTART ---
+        kubectl rollout restart deployment frontend-service
