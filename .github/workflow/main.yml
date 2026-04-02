@@ -1,0 +1,55 @@
+name: MCA CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main # This tells GitHub to run this pipeline every time code is pushed to main branch
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+    
+    # 1. Get the latest code from your repository
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    # 2. Log into your Azure Account using the secret you saved
+    - name: Azure Login
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    # 3. Log into your Azure Container Registry (ACR) Warehouse
+    - name: Login to ACR
+      run: az acr login --name sohanmcastorage7530
+
+    # 4. Build new Docker images from your code and push them to the warehouse
+    - name: Build and Push Docker Images
+      run: |
+        docker build -t sohanmcastorage7530.azurecr.io/user-service:v1 ./services/user-service
+        docker push sohanmcastorage7530.azurecr.io/user-service:v1
+
+        docker build -t sohanmcastorage7530.azurecr.io/product-service:v1 ./services/product-service
+        docker push sohanmcastorage7530.azurecr.io/product-service:v1
+
+        docker build -t sohanmcastorage7530.azurecr.io/order-service:v1 ./services/order-service
+        docker push sohanmcastorage7530.azurecr.io/order-service:v1
+
+    # 5. Connect to your Kubernetes Cluster
+    - name: Set AKS Context
+      uses: azure/aks-set-context@v3
+      with:
+        resource-group: mca-project-group
+        cluster-name: mca-aks-cluster
+
+    # 6. Apply the instruction manuals (YAML files) and restart the containers to load the new code
+    - name: Deploy to Kubernetes
+      run: |
+        kubectl apply -f k8s/user-service.yaml
+        kubectl apply -f k8s/product-service.yaml
+        kubectl apply -f k8s/order-service.yaml
+        
+        kubectl rollout restart deployment user-service-deployment
+        kubectl rollout restart deployment product-service-deployment
+        kubectl rollout restart deployment order-service-deployment
