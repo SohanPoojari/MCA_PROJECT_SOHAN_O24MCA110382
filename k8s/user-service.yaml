@@ -16,6 +16,7 @@ spec:
       containers:
       - name: user-service
         image: sohanmcastorage7530.azurecr.io/user-service:v1
+        imagePullPolicy: Always
         ports:
         - containerPort: 8001
 
