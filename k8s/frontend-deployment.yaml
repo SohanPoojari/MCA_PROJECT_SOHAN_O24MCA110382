@@ -16,6 +16,12 @@ spec:
       - name: frontend-service
         # Replace YOUR_ACR_NAME with your actual Azure Container Registry name
         image: sohanmcastorage7530.azurecr.io/frontend-service:v1
+        imagePullPolicy: Always
+        env:
+        - name: STREAMLIT_SERVER_ENABLE_CORS
+          value: "false"
+        - name: STREAMLIT_SERVER_ENABLE_XSRF_PROTECTION
+          value: "false"
         ports:
         - containerPort: 8501
 ---
