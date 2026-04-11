@@ -1,16 +1,37 @@
 from fastapi import FastAPI
+from pydantic import BaseModel
+from typing import List
 
 app = FastAPI(title="Product Service API", version="1.0.0")
 
+# --- IN-MEMORY STOCK LEDGER ---
+db_products = [
+    {"id": 1, "name": "Cloud Instance", "price": 50.0, "stock": 10},
+    {"id": 2, "name": "Storage Bucket", "price": 10.0, "stock": 100}
+]
+
+class ProductCreate(BaseModel):
+    name: str
+    price: float
+    stock: int
+
 @app.get("/health")
-def health_check():
+def health():
     return {"status": "healthy", "service": "product-service"}
 
-@app.get("/products/{product_id}")
-def get_product(product_id: int):
-    # Mock Database
-    products = {
-        1: {"id": 1, "name": "Cloud Architecture Book", "price": 50.0},
-        2: {"id": 2, "name": "Microservices Course", "price": 120.0}
+# 1. Endpoint to ADD a product (Fixes the silent failure)
+@app.post("/products", status_code=201)
+def add_product(product: ProductCreate):
+    new_prod = {
+        "id": len(db_products) + 1,
+        "name": product.name,
+        "price": product.price,
+        "stock": product.stock
     }
-    return products.get(product_id, {"error": "Product not found"})
+    db_products.append(new_prod)
+    return {"message": "Product added to Inventory", "product": new_prod}
+
+# 2. Endpoint to GET all products (For the Stock Ledger tab)
+@app.get("/products")
+def get_products():
+    return db_products
