@@ -4,11 +4,11 @@ import pandas as pd
 import numpy as np
 import time
 
-# --- 0. SERVICE CONNECTIONS (The missing links!) ---
-# These names must match your Kubernetes Service names exactly
-USER_SERVICE_URL = "http://user-service-service:5001"
-PRODUCT_SERVICE_URL = "http://product-service-service:5002"
-ORDER_SERVICE_URL = "http://order-service-service:5003"
+# --- 0. SERVICE CONNECTIONS (The K8s Routing Fix) ---
+# These names match your Kubernetes internal DNS exactly
+USER_SERVICE_URL = "http://user-service:8001"
+PRODUCT_SERVICE_URL = "http://product-service:8002"
+ORDER_SERVICE_URL = "http://order-service:80"
 
 # --- 1. SETTINGS & GLASS-MORPHISM UI ---
 st.set_page_config(page_title="Azure Cloud Command", page_icon="⚡", layout="wide")
@@ -120,8 +120,10 @@ elif menu == "👥 USER ENGINE":
                         if res.status_code == 201:
                             st.balloons()
                             st.success(f"Identity {name} synced to Azure SQL.")
-                    except:
-                        st.error("🚨 User Service Offline")
+                        else:
+                            st.error(f"Error {res.status_code}: Could not add user.")
+                    except requests.exceptions.RequestException as e:
+                        st.error(f"🚨 User Service Offline: {e}")
 
     with tab2:
         if st.button("🔄 REFRESH USER DATA"):
