@@ -9,41 +9,47 @@ app = FastAPI(
     version="1.0.0"
 )
 
+# --- IN-MEMORY DATABASE ---
+# This list will store users while the pod is running
+db_users = [
+    {"id": 1, "name": "Admin", "email": "admin@mca.com"},
+    {"id": 2, "name": "Test User", "email": "test@mca.com"}
+]
+
 # Define the data structure the Frontend is sending
 class UserCreate(BaseModel):
     name: str
     email: str
 
-# Root endpoint for health checks (Crucial for Kubernetes)
+# Health check for Kubernetes
 @app.get("/health")
 def health_check():
     return {"status": "healthy", "service": "user-service"}
 
-# --- THE MISSING DOORS ---
+# --- UPDATED ENDPOINTS ---
 
-# 1. Endpoint to ADD a new user (This fixes the 404 Error!)
-# Notice status_code=201, which is exactly what your Streamlit app checks for to show balloons!
+# 1. Endpoint to ADD a new user (Now saves to the db_users list)
 @app.post("/users", status_code=201)
 def create_user(user: UserCreate):
-    # In a real production app, you would insert this into Azure SQL here.
-    # For now, we return a success response so the Frontend knows it worked.
-    return {"message": f"User {user.name} created successfully", "email": user.email}
+    # Create a new user object with a dynamic ID
+    new_user = {
+        "id": len(db_users) + 1, 
+        "name": user.name, 
+        "email": user.email
+    }
+    db_users.append(new_user) # This saves it!
+    return {"message": f"User {user.name} synced to Memory", "user": new_user}
 
-# 2. Endpoint to GET all users (This fixes the "Master Registry" tab)
+# 2. Endpoint to GET all users (Now returns the dynamic list)
 @app.get("/users")
 def get_all_users():
-    # Mock data to prove the Frontend table works
-    return [
-        {"id": 1, "name": "Admin", "email": "admin@mca.com"},
-        {"id": 2, "name": "Test User", "email": "test@mca.com"}
-    ]
+    return db_users
 
-# Original Mock User Database endpoint
+# 3. Get specific user by ID
 @app.get("/users/{user_id}")
 def get_user(user_id: int):
-    return {
-        "id": user_id,
-        "name": f"mca_student_{user_id}",
-        "email": f"student{user_id}@university.edu",
-        "role": "admin"
-    }
+    # Search the list for the user
+    user = next((u for u in db_users if u["id"] == user_id), None)
+    if user:
+        return user
+    return {"error": "User not found"}
