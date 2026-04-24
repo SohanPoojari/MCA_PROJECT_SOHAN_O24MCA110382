@@ -1,31 +1,34 @@
-import requests
-from fastapi import FastAPI, HTTPException
-import os
+from fastapi import FastAPI
+from pydantic import BaseModel
 
 app = FastAPI(title="Order Service API", version="1.0.0")
 
-# Fetching the Docker Network URLs passed by Docker Compose!
-USER_SERVICE_URL = os.getenv("USER_SERVICE_URL", "http://user-service:8001")
-PRODUCT_SERVICE_URL = os.getenv("PRODUCT_SERVICE_URL", "http://product-service:8002")
+# --- IN-MEMORY ORDER LEDGER ---
+db_orders = []
+
+class OrderCreate(BaseModel):
+    user_id: int
+    product_id: int
+    quantity: int
 
 @app.get("/health")
-def health_check():
+def health():
     return {"status": "healthy", "service": "order-service"}
 
-@app.post("/create-order/{user_id}/{product_id}")
-def create_order(user_id: int, product_id: int):
-    user_response = requests.get(f"{USER_SERVICE_URL}/users/{user_id}")
-    if user_response.status_code != 200:
-        raise HTTPException(status_code=404, detail="User not found")
-    
-    prod_response = requests.get(f"{PRODUCT_SERVICE_URL}/products/{product_id}")
-    if prod_response.status_code != 200:
-        raise HTTPException(status_code=404, detail="Product not found")
-
-    return {
-        "order_id": 999,
-        "customer": user_response.json()["username"], 
-        "item": prod_response.json()["name"],         
-        "price_paid": prod_response.json()["price"],
-        "status": "Order Placed Successfully via Docker Network!"
+# 1. Endpoint to CREATE an order
+@app.post("/orders", status_code=201)
+def create_order(order: OrderCreate):
+    new_order = {
+        "id": len(db_orders) + 1,
+        "user_id": order.user_id,
+        "product_id": order.product_id,
+        "quantity": order.quantity,
+        "status": "Order Confirmed"
     }
+    db_orders.append(new_order)
+    return {"message": "Order placed successfully", "order": new_order}
+
+# 2. Endpoint to GET all orders
+@app.get("/orders")
+def get_orders():
+    return db_orders
